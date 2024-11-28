@@ -1,62 +1,99 @@
-import express, { response } from "express";
-import fs from "node:fs";
+import bodyParser from "body-parser";
+import express from "express";
 import cors from "cors";
 import { db } from "./db.js";
-import { user } from "./src/router/user.js";
-import { category } from "./src/router/category.js";
-import { record } from "./src/router/record.js";
-import { auth } from "./src/router/auth.js";
+import { user } from "./src/routers/User.js";
+import { record } from "./src/routers/Record.js";
+import { category } from "./src/routers/Category.js";
+import { auth } from "./src/routers/Auth.js";
 
 const app = express();
 const port = 8000;
 
-app.use(express.json());
+app.use(bodyParser.json());
 app.use(cors());
-app.use('/user', user)
-app.use('/category', category)
-app.use('/record', record)
-app.use('/api', auth)
-
-
+app.use("/user", user);
+app.use("/record", record);
+app.use("/category", category);
+app.use("/auth", auth);
 
 app.get("/installExtension", async (req, res) => {
-  //table create
-  const TableQueryText = `CREATE TABLE IF NOT EXISTS users `;
-
+  const tableQueryText = `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+  db.query(tableQueryText);
   try {
-    db.query(TableQueryText);
-
-    res.send("success");
+    await db.query(tableQueryText);
   } catch (error) {
-    console.log(error);
-    res.send(error.message);
+    console.error(error);
   }
+  res.send("extension installed successfully");
 });
 
-app.get("/createTable", async (req, res) => {
-  //table create
-  const TableQueryText = `
-  CREATE TABLE "users" (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(50)  NOT NULL,
+app.get("/usertable", async (req, res) => {
+  let tableQueryText = `
+  CREATE TABLE "user" (
+   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+   name VARCHAR(50) NOT NULL,
+   email VARCHAR(50) UNIQUE NOT NULL,
     password TEXT,
-    avatar_image TEXT,
+    avatar_img TEXT,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    currency_type currency_type DEFAULT 'USD' NOT NULL
-  );
-`;
-  try {
-    db.query(TableQueryText);
+    currency_type currency_type DEFAULT 'MNT'
+    )`;
 
-    res.send("success");
+  try {
+    await db.query(tableQueryText);
   } catch (error) {
-    console.log(error);
-    res.send(error.message);
+    console.error(error);
   }
+  res.send("user table created succesfully");
+});
+
+app.get("/recordtable", async (req, res) => {
+  let tableQueryText = `
+ CREATE TABLE "record" (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id uuid NOT NULL,
+    category_id uuid NOT NULL,
+    FOREIGN KEY (user_id)
+    references user(id),
+    FOREIGN KEY (category_id)
+    references category(id),
+    name TEXT,
+    amount REAL NOT NULL,
+    transaction_type transaction_type DEFAULT 'EXP' NOT NULL,
+    description TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`;
+
+  try {
+    await db.query(tableQueryText);
+  } catch (error) {
+    console.error(error);
+  }
+  res.send("record table created succesfully");
+});
+
+app.get("/categorytable", async (req, res) => {
+  let tableQueryText = `
+  CREATE TABLE "category" (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100),
+    description TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    category_image TEXT
+    )`;
+
+  try {
+    await db.query(tableQueryText);
+  } catch (error) {
+    console.error(error);
+  }
+  res.send("category table created succesfully");
 });
 
 app.listen(port, () => {
-  console.log(`my backend listening on port ${port}`);
+  console.log(`Backend listening on port ${port}`);
 });

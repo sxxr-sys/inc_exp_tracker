@@ -1,24 +1,28 @@
 import "@/styles/globals.css";
-import { BasicLayout } from "@/Layout";
+import { DefaultLayout } from "@/layout";
 import { useRouter } from "next/router";
 import { createContext, useRef } from "react";
 
-export const DialogContext = createContext();
+export const DialogContext = createContext()
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
-  const btnRef = useRef();
+  const recordBtnRef = useRef();
+  const categoryBtnRef = useRef();
+
   const layoutRoutes = ["/dashboard", "/records"];
 
   const isLayoutRoute = layoutRoutes.includes(router.pathname);
 
   return isLayoutRoute ? (
-    <DialogContext.Provider value={{ btnRef }}>
-      <BasicLayout>
+    <DialogContext.Provider value={{ recordBtnRef, categoryBtnRef }}>
+      <DefaultLayout>
         <Component {...pageProps} />
-      </BasicLayout>
+      </DefaultLayout>
     </DialogContext.Provider>
   ) : (
-    <Component {...pageProps} />
-  );
+    <DialogContext.Provider value={{ recordBtnRef, categoryBtnRef }}>
+      <Component {...pageProps} />
+    </DialogContext.Provider>
+  )
 }
